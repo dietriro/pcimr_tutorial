@@ -17,27 +17,28 @@ If you do not have any prior experience with ROS you may need to go through some
 
 ### Code Overview
 
-<figure style="float: right;">
-  <img style="float: left;" width="300" src="resources/imgs/map_grid.png">
-  <figcaption style="text-align: left;">
-    Fig.1: The grid-world for this exercise,
-    <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;white cells are free space and
-    <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;black ones are occupied.
-  </figcaption>
-  <br>
-  <img style="float: right;" width="300" src="resources/imgs/robot-sensors.png">
-  <figcaption style="text-align: center;">
-    Fig.2: The robots range sensors (red).
-  </figcaption>
-  <br>
-  <img style="float: right;" width="300" src="resources/imgs/map_grid_with-goal.png">
-  <figcaption style="text-align: left;">
-    Fig.1: The grid-world for this exercise,
-    <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with the goal marked in red.
-</figcaption>
-</figure>
 
 This repository is a ROS meta-package including a package that provides a rudimentary robot simulator for a 2D grid-world. The world used for this exercise is shown below in Fig. 1.
+
+
+<table style="margin-left: auto; margin-right: auto;">
+  <tr>
+    <td style="width: 30%;"> <img width="250" src="resources/imgs/map_grid.png"></td>
+    <td style="width: 30%;"> <img width="250" src="resources/imgs/robot-sensors.png"> </td>
+    <td style="width: 30%;"> <img width="250" src="resources/imgs/map_grid_with-goal.png"></td>
+  </tr>
+  <tr>
+    <td> Fig.1: The grid-world for this exercise,
+      <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;white cells are free space and
+      <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;black ones are occupied.
+    </td>
+    <td>  Fig.2: The robots range sensors (red).</td>
+    <td>  Fig.3: The grid-world for this exercise,
+      <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with the goal marked in red.
+    </td>
+  </tr>
+</table>
+
 
 You can run the node simple_robot_sim_node by using
 
