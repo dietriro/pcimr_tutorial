@@ -66,13 +66,26 @@ class RobotSimulator:
 
             self.world[obj_x, obj_y] = 1
 
-    def init_position(self):
+    def init_position(self, position: tuple = None) -> bool:
         """
-        Initializes the position of the robot randomly in the grid world.
+        Initializes the position to the one given by the parameter, if provided and valid (free). In case the position
+        parameter is None, a random position will be generated within the free space of the grid-world.
+
+        @param position: The initial position of the robot (x, y).
+        @return: True if cell at given position is valid (free), False otherwise (occupied).
         """
-        self.pos = np.array([np.random.randint(self.size_x), np.random.randint(self.size_y)])
-        while self.world[tuple(self.pos)] > 0:
+
+        if position is None:
             self.pos = np.array([np.random.randint(self.size_x), np.random.randint(self.size_y)])
+            while self.world[tuple(self.pos)] > 0:
+                self.pos = np.array([np.random.randint(self.size_x), np.random.randint(self.size_y)])
+        else:
+            if not self.cell_valid(*position):
+                return False
+            else:
+                self.pos = np.array(position)
+
+        return True
 
     def sense(self) -> list:
         """
@@ -156,3 +169,14 @@ class RobotSimulator:
         @return: True, if the cell lies within the world, False otherwise.
         """
         return 0 <= x < self.size_x and 0 <= y < self.size_y
+
+    def cell_valid(self, x, y) -> bool:
+        """
+        Checks whether the cell with the given coordinates is located within the boundaries of the world and is not
+        occupied (free).
+
+        @param x: The x-coordinate of the cell.
+        @param y: The y-coordinate of the cell.
+        @return: True, if the cell lies within the world and is free, False otherwise.
+        """
+        return self.cell_in_world(x, y) and self.world[x, y] == 0

@@ -7,8 +7,9 @@ from threading import Lock
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Point
+from pcimr_simulation.srv import InitPos
 
-from pcimr_simulation.simple_sim import RobotSimulator
+from robot_sim.simple_sim import RobotSimulator
 
 
 # An exmaple world for the robot simulator
@@ -86,6 +87,9 @@ class SimpleSimNode:
         # Initialize Subscribers
         self.sub_move = rospy.Subscriber('/move', String, self.cb_move)
 
+        # Initialize Services
+        self.srv_init_pos = rospy.Service('init_pos', InitPos, self.handle_init_pos)
+
         # Setup messages for publishing
         self.msg_robot_position = Point()
         self.msg_robot_position.z = 0
@@ -109,10 +113,22 @@ class SimpleSimNode:
         @param msg: The message containing the movement command (N, S, E, W).
         """
         self.sim_lock.acquire()
-        rospy.loginfo(f'Sending move command to simulator: {msg.data}')
+        rospy.logdebug(f'Sending move command to simulator: {msg.data}')
         success = self.sim.move(msg.data)
-        rospy.logdebug(f'Success: {success}')
+        if success:
+            rospy.loginfo(f'Successfully moved the robot into "{msg.data}".')
+        else:
+            rospy.logwarn(f'Could not move the robot into "{msg.data}".')
         self.sim_lock.release()
+
+    def handle_init_pos(self, req):
+        rospy.logdebug(f'Initializing position of robot to ({req.x}, {req.y})')
+        success = self.sim.init_position((req.x, req.y))
+        if not success:
+            rospy.logwarn(f'Position initialization to ({req.x}, {req.y}) failed.')
+        else:
+            rospy.loginfo(f'Successfully initialized position to ({req.x}, {req.y}).')
+        return success
 
     def run(self, rate: float = 1):
         """

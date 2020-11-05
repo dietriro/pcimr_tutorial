@@ -10,6 +10,9 @@ project(pcimr_simulation)
 find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
+  roscpp
+  rospy
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -53,11 +56,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  InitPos.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -67,10 +69,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   sensor_msgs#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -160,6 +162,9 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 # catkin_install_python(PROGRAMS
 #   scripts/my_python_script
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+# catkin_install_python(PROGRAMS src/simple_sim_node
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 

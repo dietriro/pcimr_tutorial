@@ -52,13 +52,14 @@ The robot has 4 range sensors (+4 optional ones), see Fig. 2. Each sensor measur
 
 ### Exercises
 
-Your task is it to write a simple planner node, that listens to the map, position and sensor information and publishes a move command per second.
+Your task is it to write a simple planner node, that listens to the position and sensor information from the simulator node and publishes periodical move commands to make the robot reach the goal (red cell) shown in Fig. 3. The robot will start in the bottom left (green cell).
 
 1. Fork and clone the provided ROS code into your local catkin-workspace. Build your workspace and make sure it runs as expected.
 2. Create your own branch and your own ROS package within the provided repository. Make sure to read the rest of this exercise first in order to define the correct dependencies when creating the package (you can also add them later).
-3. Now, that you are ready to code, implement a ROS node with two subscribers and one publisher.
-   1. The subscribers receive the robots position and sensor data from the simulator node.
-   2. The publisher sends a simple String as a ROS message on the topic /move.
-   3. Now write a simple logic, that combines this data by selecting a movement (S, W, N, E) at each time step, which will guide the robot to the goal (red), while avoiding obstacles (black) and staying with the world boundaries.
+3. Now, that you are ready to code, implement a ROS node with two subscribers, one publisher as well as a service call to the simulator node.
+   1. The service call to /init_pos is used to initialize the position of the robot to (2, 0).
+   2. The subscribers receive the robots position and sensor data from the simulator node.
+   3. The publisher sends a simple String as a ROS message on the topic /move.
+   4. Now write a simple logic, that combines this data by selecting a movement (S, W, N, E) at each time step, which will guide the robot to the goal (red), while avoiding obstacles (black) and staying with the world boundaries.
 
 Note: This is not a complex algorithm. Just think of how you would explain the path to another person.
