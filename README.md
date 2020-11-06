@@ -21,11 +21,11 @@ If you do not have any prior experience with ROS you may need to go through some
 This repository is a ROS meta-package including a package that provides a rudimentary robot simulator for a 2D grid-world. The world used for this exercise is shown below in Fig. 1.
 
 
-<table style="margin-left: auto; margin-right: auto;">
+<table style="margin-left: auto; margin-right: auto; table-layout: fixed; width: 100%">
   <tr>
-    <td style="width: 30%;"> <img width="250" src="resources/imgs/map_grid.png"></td>
-    <td style="width: 30%;"> <img width="250" src="resources/imgs/robot-sensors.png"> </td>
-    <td style="width: 30%;"> <img width="250" src="resources/imgs/map_grid_with-goal.png"></td>
+    <td style="width: 30%;"> <img src="resources/imgs/map_grid.png"></td>
+    <td style="width: 30%;"> <img src="resources/imgs/robot-sensors.png"> </td>
+    <td style="width: 30%;"> <img src="resources/imgs/map_grid_with-goal.png"></td>
   </tr>
   <tr>
     <td style="width: 30%;" valign="top"> <b>Fig.1:</b> The grid-world for this exercise, white cells are free space and black ones are occupied.
