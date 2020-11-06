@@ -28,13 +28,10 @@ This repository is a ROS meta-package including a package that provides a rudime
     <td style="width: 30%;"> <img width="250" src="resources/imgs/map_grid_with-goal.png"></td>
   </tr>
   <tr>
-    <td valign="top"> <b>Fig.1:</b> The grid-world for this exercise,
-      <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;white cells are free space and
-      <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;black ones are occupied.
+    <td valign="top"> <b>Fig.1:</b> The grid-world for this exercise, white cells are free space and black ones are occupied.
     </td>
     <td valign="top">  <b>Fig.2:</b> The robots range sensors (red).</td>
-    <td valign="top">  <b>Fig.3:</b> The grid-world for this exercise,
-      <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with the goal marked in red.
+    <td valign="top">  <b>Fig.3:</b> The grid-world for this exercise, with the goal marked in red.
     </td>
   </tr>
 </table>
