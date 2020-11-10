@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bresenham import bresenham
+from robot_sim.bresenham import bresenham
 import numpy as np
 
 
@@ -12,7 +12,7 @@ MOVE = [(0, 1),     # Up
         (1, 0)]     # Right
 
 
-class RobotSimulator:
+class RobotSimulator2D:
     """
     A class that defines a simple environment for a robot including its interaction with it (sensing/moving).
     """

@@ -9,7 +9,7 @@ from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Point
 from pcimr_simulation.srv import InitPos
 
-from robot_sim.simple_sim import RobotSimulator
+from robot_sim.discrete_robot_sim import RobotSimulator2D
 
 
 # An exmaple world for the robot simulator
@@ -104,7 +104,7 @@ class SimpleSimNode:
         self.msg_scan.range_max = 30
 
         # Initialize Robot Simulator
-        self.sim = RobotSimulator(world=WORLD, pos=(2, 0), num_sensors=4)
+        self.sim = RobotSimulator2D(world=WORLD, pos=(2, 0), num_sensors=4)
 
     def cb_move(self, msg):
         """
