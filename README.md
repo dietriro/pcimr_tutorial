@@ -37,9 +37,9 @@ This repository is a ROS meta-package including a package that provides a rudime
 </table>
 
 
-You can run the node simple_robot_sim_node by using
+You can run the node simple_sim_node by using
 
-    rosrun pcimr_simulation simple_robot_sim_node
+    rosrun pcimr_simulation simple_sim_node
 
 After running the node you should be able to view the info about the node in the terminal using common ROS commands. You will see, that the node publishes on two different topics:
 - the robot position (```/robot_pos```)
