@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 
 def bresenham(x0: int, y0: int, x1: int, y1: int):

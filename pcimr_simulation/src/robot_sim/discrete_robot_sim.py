@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from robot_sim.bresenham import bresenham
 import numpy as np
