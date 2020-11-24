@@ -77,8 +77,6 @@ class SimpleSimNode:
         self.sim = RobotSimulator2D(world=load_map(self.map_path), pos=(2, 2), num_sensors=4, move_variance=np.array(robot_move_prob))
 
         # Setup messages for publishing
-        self.msg_robot_position = Point()
-        self.msg_robot_position.z = 0
         self.msg_scan = LaserScan()
         self.msg_scan.header.seq = 0
         self.msg_scan.header.frame_id = 'world'
@@ -134,15 +132,8 @@ class SimpleSimNode:
         """
         while not rospy.is_shutdown():
             # Update message data
-            self.msg_robot_position.x = self.sim.pos[0]
-            self.msg_robot_position.y = self.sim.pos[1]
-
             self.msg_scan.ranges = self.sim.sense()
-
             self.msg_map = numpy_to_occupancy_grid(self.sim.world, info=self.msg_map.info)
-
-            self.msg_pos_marker.pose.position.x = self.sim.pos[0]+0.5
-            self.msg_pos_marker.pose.position.y = self.sim.pos[1]+0.5
 
             # Publish messages
             self.pub_scan.publish(self.msg_scan)
