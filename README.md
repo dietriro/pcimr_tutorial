@@ -4,14 +4,14 @@
 
 ### Introduction
 
-The purpose of this tutorial is to demonstrate basic knowledge of probability theory as well as an understanding of the principles of mobile robot localization. You can solve this task using either C++ or Python.
+The purpose of this tutorial is to demonstrate basic knowledge of probability theory as well as an understanding of the principles of mobile robot localization. You can solve this task using either C++ or Python.
 
 After completing this exercise you should be able to
 - understand work with uncertainties in robotics and beyond
 - understand how mobile robot localization works in general, including the challenges that arise:
   - potential problems due to uncertainties in the sensor, movement, etc.
   - discretization/approximation of the real-world
-- implement a variety of mobile robot localization algorithms
+- implement a variety of mobile robot localization algorithms
 
 If you have trouble understanding the code or writing your own, please have a look at the [tutorials](http://wiki.ros.org/ROS/Tutorials) again.
 
@@ -27,7 +27,7 @@ As a reminder, the simulation can be started by
 
     rosrun pcimr_simulation simple_sim_node
 
-Instead of the robots position, the simulator now publishes the map, as you willneed it for localizing the robot in the environment. Besides that, the simulation node is still publishing the sensor data (*/scan*) with 4 range measurements by default, see Fig. 2. 
+Instead of the robots position, the simulator now publishes the map, as you will need it for localizing the robot in the environment. Besides that, the simulation node is still publishing the sensor data (*/scan*) with 4 range measurements by default, see Fig. 2. 
 
 The node also still subscribes to the */move* topic, but you don’t have to send any commands this time. This task is performed by the *navigator_node*, located in the new pcimr_navigation package. 
 
@@ -55,7 +55,7 @@ The node also still subscribes to the */move* topic, but you don’t have to sen
 
 The *navigator_node* is responsible for navigating the robot from its current position to another free cell in the world. It publishes the *move* command for the simulator as well as an rviz visualization marker for the goal and the calculated path as shown in Fig. 3. 
 
-The move command is now modified to be uncertain, in order to make thesimulation a bit more realistic. There are 5 values specifying this uncertainty:
+The move command is now modified to be uncertain, in order to make the simulation a bit more realistic. There are 5 values specifying this uncertainty:
 
     [𝑝(𝑢=𝑢 ̂ ),𝑝(𝑢=𝑢 ̂−90°),𝑝(𝑢=𝑢 ̂+90°),𝑝(𝑢=𝑢 ̂−180°), 𝑝(𝑢=∅)]
 
@@ -67,9 +67,9 @@ This parameter can be specified when launching the simulation together with the 
 ---
 ### Exercises
 
-Your task will it be to write a grid localization based on the discrete Bayes filter algorithm. The node listens to the map/sensor/move data and publishes a map with theprobability distribution of the robots position as well as a single, best estimate (Fig. 5). 
+Your task will it be to write a grid localization based on the discrete Bayes filter algorithm. The node listens to the map/sensor/move data and publishes a map with the probability distribution of the robots position as well as a single, best estimate (Fig. 5). 
 
-1. Fork and clone the updated ROS code, then checkout the new branch (tutorial-03). Create your own branch and a new ROS package within the provided repository with the name pcimr_localization. 
+1. Fork and clone the updated ROS code, then checkout the new branch (tutorial-03). Create your own branch and a new ROS package within the provided repository with the name pcimr_localization. 
 
 2. Now, implement a ROS node with three subscribers and three publisher.
    1. Subscribers receive map/sensor data from simulator node, move from navigator node.
@@ -85,6 +85,6 @@ Your task will it be to write a grid localization based on the discrete Bayes fi
 
 2. The localization algorithm should be based on the discrete Bayes filter introduced in this lecture (see Thrun et al., Probabilistic Robotics and below). For the motion (move) model, we assume the following probabilities according to the scheme presented on slide 35: [0.9,  0.04,  0.04,  0.0,  0.02]. For the sensor model, we assume that each beam measures distance 𝑑 correctly with 𝑝(𝑧)=0.8. With a probability of 𝑝(𝑧)=0.2, the sensor measures 𝑑+1/𝑑−1 (0.1 each). 
    
-3. Once you implemented the localization and got it working successfully, try to change the movementprobabilities to the following: [0.7,  0.1,  0.1,  0.0,  0.1].What difference does it make? Is your robot still able to localize? If not, what do you have to tweak to increase the localization performance?
+3. Once you implemented the localization and got it working successfully, try to change the movement probabilities to the following: [0.7,  0.1,  0.1,  0.0,  0.1].What difference does it make? Is your robot still able to localize? If not, what do you have to tweak to increase the localization performance?
    
 4. After changing the param. rand_ini_pos to true, the navigator_node will trigger a new random position for the robot after reaching the goal. This simulates the kidnapped robot problem. See if your algorithm is able to cope with it ;)
