@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+
+import rospy
+import rospkg
+import numpy as np
+import os
+from threading import Lock
+
+from std_msgs.msg import String
+from geometry_msgs.msg import Point, Pose, Quaternion
+from nav_msgs.msg import OccupancyGrid, MapMetaData
+from visualization_msgs.msg import Marker
+from pcimr_simulation.srv import InitPos
+
+from path_planning.global_path_planning import astar
+
+
+MOVE_IDS = ['N', 'S', 'W', 'E']
+
+MOVE = [np.array([0, 1]),     # Up
+        np.array([0, -1]),    # Down
+        np.array([-1, 0]),    # Left
+        np.array([1, 0])]     # Right
+
+
+class NavigatorNode:
+    """
+    A node, capsuling the functionality from the simple robot simulator.
+    """
+
+    def __init__(self):
+        """
+        Initializes a SimpleSimNode instance, including initialization of the sim node itself and all
+        Publishers/Subscribers.
+
+        @param num_sensors: The number of sensors used for the simulation (4/8).
+        """
+        # Initialize member variables
+        self.sim_lock = Lock()
+        # get an instance of RosPack with the default search paths
+        rospack = rospkg.RosPack()
+        # get the file path for rospy_tutorials
+        self.pkg_path = rospack.get_path('pcimr_simulation')
+        self.map_path = os.path.join(self.pkg_path, 'resources/map_tutorial_03.png')
+
+        self.robot_pos = None
+        self.map = None
+        self.goal = None
+
+        # Retrieve Parameters
+        self.rand_ini_pos = rospy.get_param('~rand_ini_pos')
+
+        # Initialize Publishers
+        self.pub_move = rospy.Publisher('/move', String, queue_size=10)
+        self.pub_goal_marker = rospy.Publisher('/visualization/goal', Marker, queue_size=10)
+        self.pub_plan_marker = rospy.Publisher('/visualization/plan', Marker, queue_size=10)
+
+        # Initialize Subscribers
+        self.sub_move = rospy.Subscriber('/robot_pos', Point, self.cb_robot_pos)
+        self.sub_move = rospy.Subscriber('/map', OccupancyGrid, self.cb_map)
+
+        # Initialize Services
+
+        # Setup messages for publishing
+        self.msg_move = String()
+
+        self.msg_goal_marker = Marker()
+        self.msg_goal_marker.header.frame_id = "map"
+        self.msg_goal_marker.ns = "navigation"
+        self.msg_goal_marker.id = 0
+        self.msg_goal_marker.type = Marker.CUBE
+        self.msg_goal_marker.action = Marker.ADD
+        self.msg_goal_marker.scale.x = 1
+        self.msg_goal_marker.scale.y = 1
+        self.msg_goal_marker.scale.z = 0.2
+        self.msg_goal_marker.color.a = 1.0
+        self.msg_goal_marker.color.r = 1.0
+        self.msg_goal_marker.color.g = 0.0
+        self.msg_goal_marker.color.b = 0.0
+        self.msg_goal_marker.pose.orientation = Quaternion(0, 0, 0, 1)
+
+        self.msg_path_marker = Marker()
+        self.msg_path_marker.header.frame_id = "map"
+        self.msg_path_marker.ns = "navigation"
+        self.msg_path_marker.id = 0
+        self.msg_path_marker.type = Marker.LINE_STRIP
+        self.msg_path_marker.action = Marker.ADD
+        self.msg_path_marker.scale.x = 0.3
+        self.msg_path_marker.color.a = 0.5
+        self.msg_path_marker.color.r = 0.0
+        self.msg_path_marker.color.g = 0.0
+        self.msg_path_marker.color.b = 1.0
+        self.msg_path_marker.pose.orientation = Quaternion(0, 0, 0, 1)
+
+
+    def cb_robot_pos(self, msg):
+        """
+        A callback for retrieving the current position estimate of the robot.
+
+        @param msg: The message containing the position estimate of the robot (x,y).
+        """
+        self.robot_pos = np.array([msg.x, msg.y])
+
+    def cb_map(self, msg):
+        """
+        A callback for retrieving the current position estimate of the robot.
+
+        @param msg: The message containing the position estimate of the robot (x,y).
+        """
+        self.map = np.transpose(np.asarray(msg.data, dtype=np.int8).reshape(msg.info.width, msg.info.height))
+
+    def generate_goal(self):
+        self.goal = np.array([np.random.randint(0, self.map.shape[0]), np.random.randint(0, self.map.shape[1])])
+
+        while not 0 < self.goal[0] < self.map.shape[0] or not 0 < self.goal[1] < self.map.shape[1] or \
+                self.map[self.goal[0], self.goal[1]] != 0 or np.linalg.norm(self.robot_pos-self.goal) < 10:
+            self.goal = np.array([np.random.randint(0, self.map.shape[0]), np.random.randint(0, self.map.shape[1])])
+
+    def set_new_robot_pos(self):
+        rospy.wait_for_service('init_pos')
+        try:
+            init_pos = rospy.ServiceProxy('init_pos', InitPos)
+            success = init_pos(-1, -1)
+            if not success:
+                rospy.logwarn(f'Random position initialization failed.')
+            else:
+                rospy.loginfo(f'Successfully set new random robot position.')
+        except rospy.ServiceException as e:
+            rospy.logwarn("Service call failed: %s" % e)
+
+    def run(self, rate: float = 1):
+        """
+        Periodically publishes the information from the simulator on the defined topics.
+
+        @param rate: The rate at which the topics are published.
+        """
+        path = None
+        path_index = 0
+        steps = 0
+        total_steps = 0
+        last_goal = np.array([0, 0])
+
+        while not rospy.is_shutdown():
+            if self.robot_pos is None or self.map is None:
+                rospy.sleep(1/rate)
+                continue
+
+            if path is not None and np.all(self.robot_pos == np.array(path[path_index+1])):
+                path_index += 1
+                if path_index == len(path)-1:
+                    # Goal reached, reset everything
+                    path_index = 0
+                    path = None
+                    steps = 0
+                    self.goal = None
+                    if (self.rand_ini_pos):
+                        self.set_new_robot_pos()
+                    rospy.sleep(1 / rate)
+                    rospy.loginfo(f'Reached the goal in {steps} steps')
+                    continue
+
+            # Generate new goal if needed
+            if self.goal is None or np.all(self.robot_pos == np.array(path[-1])):
+                self.generate_goal()
+                rospy.loginfo(f'Generated a new random goal at ({self.goal})')
+
+
+            # Re-plan if robot_pos is neither at last location nor the location it moved to
+            if path is None or (np.all(self.robot_pos != np.array(path[path_index])) and
+                                np.all(self.robot_pos != np.array(path[path_index-1]))) or \
+                    np.linalg.norm(self.robot_pos-np.array(path[path_index+1])) > 1:
+                rospy.loginfo(f'Finding a new plan from ({self.robot_pos}) to goal ({self.goal})')
+                path = astar(self.map, tuple(self.robot_pos), tuple(self.goal))
+                path_index = 0
+
+                if steps == 0:
+                    total_steps = len(path)-1
+
+                # Add path cells to vis marker
+                self.msg_path_marker.points.clear()
+                for point in path:
+                    self.msg_path_marker.points.append(Point(point[0]+0.5, point[1]+0.5, 0.0))
+
+            # Move robot
+            target = np.array(path[path_index+1])
+            move = target-self.robot_pos
+            move_id = -1
+            for cmd in MOVE:
+                move_id += 1
+                if np.all(cmd == move):
+                    break
+            move_cmd = MOVE_IDS[move_id]
+            steps += 1
+
+            rospy.loginfo(f'Moving robot into direction "{move_cmd}" - Step {steps}/{total_steps}')
+
+            # Update message data
+            self.msg_move.data = move_cmd
+
+            self.msg_goal_marker.pose.position.x = self.goal[0]+0.5
+            self.msg_goal_marker.pose.position.y = self.goal[1]+0.5
+
+            # Publish messages
+            self.pub_move.publish(self.msg_move)
+            self.pub_goal_marker.publish(self.msg_goal_marker)
+            self.pub_plan_marker.publish(self.msg_path_marker)
+
+            # Sleep for a while before publishing new messages. 
+            if rate:
+                rospy.sleep(1/rate)
+
+
+if __name__ == "__main__":
+    rospy.init_node('navigator_node')
+
+    navigator_node = NavigatorNode()
+    navigator_node.run(rate=1)

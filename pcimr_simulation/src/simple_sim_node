@@ -1,68 +1,43 @@
 #!/usr/bin/env python3
 
 import rospy
+import rospkg
 import numpy as np
+import os
 from threading import Lock
 
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, Pose, Quaternion
+from nav_msgs.msg import OccupancyGrid, MapMetaData
+from visualization_msgs.msg import Marker
 from pcimr_simulation.srv import InitPos
 
 from robot_sim.discrete_robot_sim import RobotSimulator2D
+from robot_sim.map_loader import load_map
 
 
-# An exmaple world for the robot simulator
-WORLD = np.array([[[1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [0], [0], [0], [0], [0], [0], [0],
-                  [0], [0], [0], [0], [0]],
-                 [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [1], [0], [0], [0], [0], [0], [0], [0],
-                  [0], [0], [0], [0], [0]],
-                 [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [1], [0], [1], [1], [1], [1], [1], [1],
-                  [0], [0], [1], [0], [0]],
-                 [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [1], [0], [1], [0], [0], [0], [0], [0],
-                  [0], [0], [1], [0], [0]],
-                 [[1], [1], [1], [1], [1], [1], [1], [1], [1], [0], [0], [0], [1], [0], [1], [0], [0], [1], [1], [1],
-                  [1], [1], [1], [0], [0]],
-                 [[0], [0], [0], [0], [0], [0], [0], [0], [1], [0], [0], [0], [1], [0], [1], [0], [1], [1], [1], [1],
-                  [1], [1], [1], [0], [0]],
-                 [[0], [0], [0], [0], [0], [0], [0], [0], [1], [0], [0], [0], [1], [0], [1], [0], [1], [1], [1], [1],
-                  [1], [0], [1], [0], [0]],
-                 [[1], [1], [0], [1], [1], [0], [0], [0], [1], [0], [0], [0], [1], [0], [1], [0], [1], [0], [1], [1],
-                  [0], [1], [1], [0], [0]],
-                 [[0], [0], [0], [0], [0], [0], [0], [1], [1], [0], [0], [0], [1], [0], [1], [0], [0], [0], [0], [0],
-                  [1], [1], [1], [0], [0]],
-                 [[0], [0], [0], [0], [0], [0], [0], [1], [0], [0], [0], [0], [1], [0], [1], [0], [0], [0], [0], [0],
-                  [1], [1], [1], [0], [0]],
-                 [[1], [1], [1], [1], [1], [0], [0], [0], [0], [1], [1], [0], [1], [0], [1], [1], [1], [1], [0], [0],
-                  [1], [1], [1], [0], [0]],
-                 [[0], [0], [0], [0], [1], [0], [0], [1], [1], [1], [1], [0], [1], [0], [0], [0], [0], [0], [1], [0],
-                  [1], [1], [1], [0], [0]],
-                 [[0], [0], [0], [0], [1], [0], [0], [1], [1], [1], [0], [0], [1], [1], [0], [0], [0], [1], [1], [0],
-                  [0], [1], [1], [0], [0]],
-                 [[1], [1], [0], [0], [1], [0], [0], [1], [0], [0], [0], [0], [0], [1], [0], [0], [0], [1], [0], [0],
-                  [0], [1], [1], [0], [0]],
-                 [[0], [1], [0], [0], [1], [0], [0], [1], [0], [1], [1], [1], [0], [1], [0], [1], [1], [1], [0], [1],
-                  [1], [1], [1], [0], [0]],
-                 [[0], [1], [0], [0], [1], [0], [0], [0], [0], [1], [0], [1], [0], [1], [0], [1], [0], [0], [0], [1],
-                  [1], [1], [0], [0], [0]],
-                 [[0], [1], [0], [0], [1], [0], [0], [1], [1], [1], [0], [1], [0], [1], [0], [1], [0], [0], [1], [1],
-                  [1], [0], [0], [0], [1]],
-                 [[0], [1], [0], [0], [1], [0], [0], [1], [0], [0], [0], [1], [1], [1], [0], [1], [0], [0], [1], [1],
-                  [0], [0], [0], [1], [1]],
-                 [[0], [1], [0], [0], [1], [0], [0], [1], [0], [0], [0], [0], [0], [0], [0], [1], [0], [0], [1], [0],
-                  [0], [0], [1], [1], [0]],
-                 [[0], [1], [0], [0], [1], [0], [0], [1], [1], [0], [1], [1], [1], [1], [1], [1], [0], [0], [1], [0],
-                  [0], [1], [1], [0], [0]],
-                 [[0], [1], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [1], [0],
-                  [1], [1], [0], [0], [0]],
-                 [[0], [1], [0], [0], [1], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [1], [0],
-                  [0], [0], [0], [0], [1]],
-                 [[0], [1], [0], [0], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [0],
-                  [0], [0], [0], [1], [1]],
-                 [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0],
-                  [0], [0], [1], [1], [1]],
-                 [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0],
-                  [0], [0], [1], [1], [1]]])
+def numpy_to_occupancy_grid(arr, info=None):
+    if not len(arr.shape) == 2:
+        raise TypeError('Array must be 2D')
+
+    # Adjust values
+    arr = arr.astype('float64')
+    factor = 100/np.max(arr)
+    arr[arr > 0] *= factor
+
+    arr = np.array(np.transpose(arr), dtype=np.int8)
+
+    grid = OccupancyGrid()
+    if isinstance(arr, np.ma.MaskedArray):
+        # We assume that the masked value are already -1, for speed
+        arr = arr.data
+    grid.data = arr.ravel()
+    grid.info = info or MapMetaData()
+    grid.info.height = arr.shape[0]
+    grid.info.width = arr.shape[1]
+
+    return grid
 
 
 class SimpleSimNode:
@@ -79,16 +54,27 @@ class SimpleSimNode:
         """
         # Initialize member variables
         self.sim_lock = Lock()
+        # get an instance of RosPack with the default search paths
+        rospack = rospkg.RosPack()
+        # get the file path for rospy_tutorials
+        self.pkg_path = rospack.get_path('pcimr_simulation')
+        self.map_path = os.path.join(self.pkg_path, 'resources/map_tutorial_03.png')
+
+        # Retrieve ROS Params
+        robot_move_prob = rospy.get_param('~robot_move_probabilities', [0.9, 0.04, 0.04, 0.0, 0.02])
 
         # Initialize Publishers
-        self.pub_robot_position = rospy.Publisher('/robot_pos', Point, queue_size=10)
         self.pub_scan = rospy.Publisher('/scan', LaserScan, queue_size=10)
+        self.pub_map = rospy.Publisher('/map', OccupancyGrid, queue_size=10)
 
         # Initialize Subscribers
         self.sub_move = rospy.Subscriber('/move', String, self.cb_move)
 
         # Initialize Services
         self.srv_init_pos = rospy.Service('init_pos', InitPos, self.handle_init_pos)
+
+        # Initialize Robot Simulator
+        self.sim = RobotSimulator2D(world=load_map(self.map_path), pos=(2, 2), num_sensors=4, move_variance=np.array(robot_move_prob))
 
         # Setup messages for publishing
         self.msg_robot_position = Point()
@@ -102,9 +88,13 @@ class SimpleSimNode:
         self.msg_scan.scan_time = 1
         self.msg_scan.range_min = 0
         self.msg_scan.range_max = 30
-
-        # Initialize Robot Simulator
-        self.sim = RobotSimulator2D(world=WORLD, pos=(2, 0), num_sensors=4)
+        self.msg_map = OccupancyGrid()
+        self.msg_map.header.frame_id = 'map'
+        self.msg_map.header.seq = 0
+        self.msg_map.info.map_load_time = rospy.Time.now()
+        self.msg_map.info.resolution = 1
+        self.msg_map.info.height = self.sim.size_y
+        self.msg_map.info.width = self.sim.size_x
 
     def cb_move(self, msg):
         """
@@ -113,7 +103,7 @@ class SimpleSimNode:
         @param msg: The message containing the movement command (N, S, E, W).
         """
         self.sim_lock.acquire()
-        rospy.logdebug(f'Sending move command to simulator: {msg.data}')
+        rospy.loginfo(f'Sending move command to simulator: {msg.data}')
         success = self.sim.move(msg.data)
         if success:
             rospy.loginfo(f'Successfully moved the robot into "{msg.data}".')
@@ -123,11 +113,17 @@ class SimpleSimNode:
 
     def handle_init_pos(self, req):
         rospy.logdebug(f'Initializing position of robot to ({req.x}, {req.y})')
-        success = self.sim.init_position((req.x, req.y))
+        if req.x < 0 or req.y < 0:
+            # Random position initialization
+            success = self.sim.init_position()
+        else:
+            # Position initialization with given values x, y
+            success = self.sim.init_position((req.x, req.y))
+
         if not success:
             rospy.logwarn(f'Position initialization to ({req.x}, {req.y}) failed.')
         else:
-            rospy.loginfo(f'Successfully initialized position to ({req.x}, {req.y}).')
+            rospy.loginfo(f'Successfully initialized position to ({self.sim.pos[0]}, {self.sim.pos[1]}).')
         return success
 
     def run(self, rate: float = 1):
@@ -143,9 +139,14 @@ class SimpleSimNode:
 
             self.msg_scan.ranges = self.sim.sense()
 
+            self.msg_map = numpy_to_occupancy_grid(self.sim.world, info=self.msg_map.info)
+
+            self.msg_pos_marker.pose.position.x = self.sim.pos[0]+0.5
+            self.msg_pos_marker.pose.position.y = self.sim.pos[1]+0.5
+
             # Publish messages
-            self.pub_robot_position.publish(self.msg_robot_position)
             self.pub_scan.publish(self.msg_scan)
+            self.pub_map.publish(self.msg_map)
 
             # Sleep for a while before publishing new messages. 
             if rate:
