@@ -133,7 +133,7 @@ class RobotSimulator2D:
 
             for cell in hit_cells:
                 measured_distance += 1
-                if self.world[cell] == 1:
+                if self.world[cell] > 0:
                     measured_distances.append(measured_distance)
                     cell_hit = True
                     break
