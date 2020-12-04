@@ -66,7 +66,6 @@ class SimpleSimNode:
         # Initialize Publishers
         self.pub_robot_position = rospy.Publisher('/robot_pos', Point, queue_size=10)
         self.pub_scan = rospy.Publisher('/scan', LaserScan, queue_size=10)
-        self.pub_map = rospy.Publisher('/map', OccupancyGrid, queue_size=10)
         self.pub_robot_pos_marker = rospy.Publisher('/visualization/robot_pos', Marker, queue_size=10)
 
         # Initialize Subscribers
@@ -90,13 +89,6 @@ class SimpleSimNode:
         self.msg_scan.scan_time = 1
         self.msg_scan.range_min = 0
         self.msg_scan.range_max = 30
-        self.msg_map = OccupancyGrid()
-        self.msg_map.header.frame_id = 'map'
-        self.msg_map.header.seq = 0
-        self.msg_map.info.map_load_time = rospy.Time.now()
-        self.msg_map.info.resolution = 1
-        self.msg_map.info.height = self.sim.size_y
-        self.msg_map.info.width = self.sim.size_x
 
         self.msg_pos_marker = Marker()
         self.msg_pos_marker.header.frame_id = "map"
@@ -157,15 +149,12 @@ class SimpleSimNode:
 
             self.msg_scan.ranges = self.sim.sense()
 
-            self.msg_map = numpy_to_occupancy_grid(self.sim.world, info=self.msg_map.info)
-
             self.msg_pos_marker.pose.position.x = self.sim.pos[0]+0.5
             self.msg_pos_marker.pose.position.y = self.sim.pos[1]+0.5
 
             # Publish messages
             self.pub_robot_position.publish(self.msg_robot_position)
             self.pub_scan.publish(self.msg_scan)
-            self.pub_map.publish(self.msg_map)
             self.pub_robot_pos_marker.publish(self.msg_pos_marker)
 
             # Sleep for a while before publishing new messages. 

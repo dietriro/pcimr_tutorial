@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+
+import rospy
+import rospkg
+import numpy as np
+import os
+import sys
+import tty
+import termios
+
+from threading import Lock
+
+from std_msgs.msg import String
+
+
+MOVE_KEYS = {'W': 'N', 'A': 'W', 'S': 'S', 'D': 'E'}
+MOVE_IDS = ['N', 'S', 'W', 'E']
+MOVE_NAMES = {'N': 'North', 'S': 'South', 'W': 'West', 'E': 'East'}
+
+
+def get_char() -> str:
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+
+class KeyRobotMover:
+    """
+    A node for moving the robot with keyboard commands
+    """
+
+    def __init__(self):
+        """
+        Initializes a KeyRobotMover instance, including initialization of the KeyRobotMover node itself and all
+        Publishers/Subscribers.
+
+        @param num_sensors: The number of sensors used for the simulation (4/8).
+        """
+        # Initialize Publishers
+        self.pub_move = rospy.Publisher('/move', String, queue_size=10)
+
+        # Setup messages for publishing
+        self.msg_move = String()
+
+    def run(self, rate: float = 1):
+        """
+        Periodically publishes the move command received from stdin.
+
+        @param rate: The rate at which the topics are published.
+        """
+
+        while not rospy.is_shutdown():
+            
+            # Get move command from command line
+            print(f'Press key {MOVE_KEYS.keys()} to move the robot: ')
+            move_input = get_char().upper()
+            if move_input in MOVE_KEYS.keys():
+                move_key = MOVE_KEYS[move_input]
+                rospy.loginfo(f'Moving robot into cardinal direction {MOVE_NAMES[move_key]}')
+
+                # Update message data
+                self.msg_move.data = move_key
+
+                # Publish messages
+                self.pub_move.publish(self.msg_move)
+            else:
+                rospy.logwarn(f'Invalid key input detected: {move_input}')
+                rospy.loginfo(f'Please try again to move the robot using keys {MOVE_KEYS.keys()}')
+
+            # Sleep for a while before publishing new messages. 
+            if rate:
+                rospy.sleep(1/rate)
+
+
+if __name__ == "__main__":
+    rospy.init_node('key_robot_mover')
+
+    key_robot_mover_node = KeyRobotMover()
+    key_robot_mover_node.run(rate=1)
