@@ -64,8 +64,10 @@ class SimpleSimNode:
         robot_move_prob = rospy.get_param('~robot_move_probabilities', [0.9, 0.04, 0.04, 0.0, 0.02])
 
         # Initialize Publishers
+        self.pub_robot_position = rospy.Publisher('/robot_pos', Point, queue_size=10)
         self.pub_scan = rospy.Publisher('/scan', LaserScan, queue_size=10)
         self.pub_map = rospy.Publisher('/map', OccupancyGrid, queue_size=10)
+        self.pub_robot_pos_marker = rospy.Publisher('/visualization/robot_pos', Marker, queue_size=10)
 
         # Initialize Subscribers
         self.sub_move = rospy.Subscriber('/move', String, self.cb_move)
@@ -77,6 +79,8 @@ class SimpleSimNode:
         self.sim = RobotSimulator2D(world=load_map(self.map_path), pos=(2, 2), num_sensors=4, move_variance=np.array(robot_move_prob))
 
         # Setup messages for publishing
+        self.msg_robot_position = Point()
+        self.msg_robot_position.z = 0
         self.msg_scan = LaserScan()
         self.msg_scan.header.seq = 0
         self.msg_scan.header.frame_id = 'world'
@@ -93,6 +97,22 @@ class SimpleSimNode:
         self.msg_map.info.resolution = 1
         self.msg_map.info.height = self.sim.size_y
         self.msg_map.info.width = self.sim.size_x
+
+        self.msg_pos_marker = Marker()
+        self.msg_pos_marker.header.frame_id = "map"
+        self.msg_pos_marker.ns = "robot_pos"
+        self.msg_pos_marker.id = 0
+        self.msg_pos_marker.type = Marker.CUBE
+        self.msg_pos_marker.action = Marker.ADD
+        self.msg_pos_marker.scale.x = 1
+        self.msg_pos_marker.scale.y = 1
+        self.msg_pos_marker.scale.z = 0.2
+        self.msg_pos_marker.color.a = 1.0
+        self.msg_pos_marker.color.r = 0.0
+        self.msg_pos_marker.color.g = 1.0
+        self.msg_pos_marker.color.b = 0.0
+        self.msg_pos_marker.pose.orientation = Quaternion(0, 0, 0, 1)
+
 
     def cb_move(self, msg):
         """
@@ -132,12 +152,21 @@ class SimpleSimNode:
         """
         while not rospy.is_shutdown():
             # Update message data
+            self.msg_robot_position.x = self.sim.pos[0]
+            self.msg_robot_position.y = self.sim.pos[1]
+
             self.msg_scan.ranges = self.sim.sense()
+
             self.msg_map = numpy_to_occupancy_grid(self.sim.world, info=self.msg_map.info)
 
+            self.msg_pos_marker.pose.position.x = self.sim.pos[0]+0.5
+            self.msg_pos_marker.pose.position.y = self.sim.pos[1]+0.5
+
             # Publish messages
+            self.pub_robot_position.publish(self.msg_robot_position)
             self.pub_scan.publish(self.msg_scan)
             self.pub_map.publish(self.msg_map)
+            self.pub_robot_pos_marker.publish(self.msg_pos_marker)
 
             # Sleep for a while before publishing new messages. 
             if rate:
